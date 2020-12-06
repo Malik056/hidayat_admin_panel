@@ -82,7 +82,7 @@
       </div>
       <div class="playlist-display" v-if="playlists && playlists.length > 0">
         <div v-for="(playlist, i) in playlists" :key="i" class="list-display">
-          <v-card min-width="300" outlined>
+          <v-card mix-width="300" outlined>
             <v-list-item three-line>
               <v-list-item-content>
                 <div class="overline mb-4">
