@@ -2,12 +2,7 @@
   <div class="wrapper">
     <div class="form">
       <v-card class="elevation-10 pa-3">
-        <v-toolbar
-          color="#1e17c5"
-          dark
-        >
-          <!-- src="https://images.pexels.com/photos/96381/pexels-photo-96381.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" -->
-          <!-- <v-toolbar-title class="text-center">Sign In</v-toolbar-title> -->
+        <v-toolbar color="#1e17c5" dark>
           <h2>Sign In</h2>
           <v-spacer></v-spacer>
           <v-img
@@ -22,10 +17,9 @@
         <v-card-text>
           <v-form>
             <v-text-field
-              @input="invalidCredentials = false"
+              :loading="loading"
+              :disabled="loading"
               v-model="email"
-              :loading="authStatus == 'processing'"
-              :disabled="!allowedToLogin"
               prepend-inner-icon="mdi-account"
               placeholder="Email"
               outlined
@@ -35,10 +29,9 @@
               :rules="emailRules"
             ></v-text-field>
             <v-text-field
-              @input="invalidCredentials = false"
+              :loading="loading"
+              :disabled="loading"
               v-model="pass"
-              :loading="authStatus == 'processing'"
-              :disabled="!allowedToLogin"
               prepend-inner-icon="mdi-lock"
               placeholder="Password"
               outlined
@@ -50,16 +43,20 @@
               name="password"
             ></v-text-field>
           </v-form>
-          <v-alert v-if="invalidCredentials" type="error">Invalid Credentials.</v-alert>
         </v-card-text>
+        <v-alert v-if="invalidCredentials" type="error"
+          >Invalid Credentials.</v-alert
+        >
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
             color="#0e07b5"
             class="white--text"
             @click="login"
-            :disabled="!allowedToLogin"
-          >Login</v-btn>
+            :disabled="loading"
+          >
+            Login
+          </v-btn>
         </v-card-actions>
       </v-card>
     </div>
@@ -67,50 +64,39 @@
 </template>
 
 <script>
-import firebase from "../firebase";
+import { auth } from "../firebase";
 
 export default {
   name: "Login",
   data() {
     return {
-      allowedToLogin: true,
       email: "",
       pass: "",
       emailRules: [
-        v => !!v || "Value is required",
-        v => /.+@.+\..+/.test(v) || "E-mail is not valid"
+        (v) => !!v || "Value is required",
+        (v) => /.+@.+\..+/.test(v) || "E-mail is not valid"
       ],
-      passRules: [v => !!v || "Value is required"],
-      invalidCredentials: false
+      passRules: [(v) => !!v || "Value is required"],
+      invalidCredentials: false,
+      loading: false
     };
-  },
-  props: {
-    authStatus: String
-  },
-  watch: {
-    authStatus() {
-      if (this.authStatus == "rejected" || this.authStatus == "logout") {
-        this.allowedToLogin = true;
-      } else {
-        this.allowedToLogin = false;
-      }
-    }
   },
   methods: {
     login() {
-      this.allowedToLogin = false;
-      firebase
-        .auth()
-        .signInWithEmailAndPassword(this.email.toLowerCase(), this.pass)
-        .then(() => {
-          this.email = "";
-          this.pass = "";
-          this.allowedToLogin = true;
+      this.invalidCredentials = false;
+      this.loading = true;
+      // sign user in
+      auth
+        .signInWithEmailAndPassword(this.email, this.pass)
+        .then((res) => {
+          this.loading = false;
+          this.$store.commit("AUTHENTICATED", true);
+          this.$router.push("/dashboard");
         })
-        .catch(error => {
-          this.allowedToLogin = true;
+        .catch((error) => {
+          this.loading = false;
+          this.$store.commit("AUTHENTICATED", false);
           this.invalidCredentials = true;
-          console.error("Login Error");
           console.error(error);
         });
     }
