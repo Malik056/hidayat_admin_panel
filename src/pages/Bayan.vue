@@ -43,6 +43,7 @@
               label="Audio Upload"
               v-model="fileSelection"
               accept="audio/*"
+              :rules="audioRules"
             ></v-file-input>
             <v-btn
               color="primary"
@@ -205,13 +206,17 @@ export default {
       playlist: null,
       valid: true,
       name: "",
+      audioRules: [(v) => !!v || "Audio is required"],
       nameRules: [
         (v) => !!v || "Name is required",
         (v) => (v && v.length <= 50) || "Name must be less than 50 characters",
         (v) =>
           (v &&
-            ((this.isUpdate && this.existingObj.name == v) ||
-              !this.bayans.find((obj) => obj.name == v))) ||
+            ((this.isUpdate &&
+              this.existingObj.name.toLowerCase() == v.toLowerCase()) ||
+              !this.bayans.find(
+                (obj) => obj.name.toLowerCase() == v.toLowerCase()
+              ))) ||
           "Name Already Exists. Try something else"
       ],
       description: "",

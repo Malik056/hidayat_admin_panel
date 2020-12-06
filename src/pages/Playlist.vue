@@ -186,8 +186,11 @@ export default {
         (v) => (v && v.length <= 50) || "Name must be less than 50 characters",
         (v) =>
           (v &&
-            ((this.isUpdate && this.existingObj.name == v) ||
-              !this.playlists.find((obj) => obj.name == v))) ||
+            ((this.isUpdate &&
+              this.existingObj.name.toLowerCase() == v.toLowerCase()) ||
+              !this.playlists.find(
+                (obj) => obj.name.toLowerCase() == v.toLowerCase()
+              ))) ||
           "Name Already Exists. Try something else"
       ],
       description: "",
