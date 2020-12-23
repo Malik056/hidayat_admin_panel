@@ -7,6 +7,7 @@
       <div class="form">
         <v-form ref="form" v-model="valid" lazy-validation>
           <v-text-field
+            :disabled="workingOnIt"
             v-model="name"
             :counter="50"
             :rules="nameRules"
@@ -15,6 +16,7 @@
           ></v-text-field>
 
           <v-select
+            :disabled="workingOnIt"
             v-model="category"
             :items="categories"
             item-text="name"
@@ -27,6 +29,7 @@
           ></v-select>
 
           <v-textarea
+            :disabled="workingOnIt"
             name="Description"
             :rows="2"
             label="Description About Playlist"
@@ -35,7 +38,7 @@
 
           <div class="image-upload">
             <v-file-input
-              :disabled="loading"
+              :disabled="loading || workingOnIt"
               :loading="loading"
               show-size
               chips
@@ -48,8 +51,8 @@
               color="primary"
               dense
               class="ml-4"
-              :disabled="loading"
-              @click="uploadImage"
+              :disabled="loading || workingOnIt"
+              @click="uploadImage()"
             >
               {{ loading ? "Uploading..." : image ? "Change" : "Upload" }}
             </v-btn>
@@ -58,14 +61,23 @@
             </div>
           </div>
 
-          <v-btn color="warning" @click="resetValidation">
+          <v-btn
+            :disabled="workingOnIt"
+            color="warning"
+            @click="resetValidation"
+          >
             Reset Validation
           </v-btn>
-          <v-btn color="error" class="ml-4" @click="reset">
+          <v-btn
+            :disabled="workingOnIt"
+            color="error"
+            class="ml-4"
+            @click="reset"
+          >
             Clear
           </v-btn>
           <v-btn
-            :disabled="!valid"
+            :disabled="workingOnIt || !valid"
             color="success"
             class="ml-4"
             @click="isUpdate ? update() : validateAndCreate()"
@@ -82,7 +94,7 @@
       </div>
       <div class="playlist-display" v-if="playlists && playlists.length > 0">
         <div v-for="(playlist, i) in playlists" :key="i" class="list-display">
-          <v-card mix-width="300" width="300" outlined>
+          <v-card mix-width="300" width="300" outlined class="playlist-item">
             <v-list-item three-line>
               <v-list-item-content>
                 <div class="overline mb-4">
@@ -177,6 +189,7 @@ export default {
       dialog: false,
       existingObj: null,
       loading: false,
+      workingOnIt: false,
       fileSelection: null,
       category: null,
       valid: true,
@@ -221,12 +234,14 @@ export default {
     validateAndCreate() {
       this.$refs.form.validate();
       if (this.valid) {
-        this.createPlaylist();
+        if (this.fileSelection && !this.image) {
+          this.uploadImage(true);
+        } else this.createPlaylist();
       }
     },
     reset() {
       this.$refs.form.reset();
-      this.image = null;
+      this.image = "";
       this.existingObj = null;
     },
     resetValidation() {
@@ -234,25 +249,35 @@ export default {
     },
 
     createPlaylist() {
+      this.workingOnIt = true;
       playlistCollection
         .add({
           createdOn: new Date().valueOf(),
           name: this.name,
           categoryId: this.category.id,
           description: this.description || "",
-          image: this.image || null
+          image: this.image || ""
         })
         .then(() => {
+          this.workingOnIt = false;
           this.message.text = "Successfully created Playlist " + this.name;
           this.message.color = "green";
           this.showMessage = true;
+          this.image = "";
           this.reset();
+        })
+        .catch((error) => {
+          this.workingOnIt = false;
+          this.message.text = "Error creating Playlist " + this.name;
+          this.message.color = "red";
+          this.showMessage = true;
         });
     },
-    uploadImage() {
+    uploadImage(createPlaylistAfterUpload = false) {
       if (this.fileSelection && this.fileSelection.type) {
         if (this.fileSelection.type.includes("image/")) {
           this.loading = true;
+          this.workingOnIt = true;
           let file = this.fileSelection;
           let name = new Date().valueOf() + "-" + file.name;
           let metadeta = {
@@ -264,16 +289,21 @@ export default {
             .then((url) => {
               this.fileSelection = null;
               this.loading = false;
+              this.workingOnIt = false;
               this.image = url;
               this.message.text = "Image Uploaded Successfully";
               this.message.color = "green";
               this.showMessage = true;
+              if (createPlaylistAfterUpload) {
+                this.createPlaylist();
+              }
             })
             .catch((error) => {
               this.message.text = "Error Uploading Image. Unable to Upload";
               this.message.color = "red";
               this.showMessage = true;
               this.loading = false;
+              this.workingOnIt = false;
               console.error(error);
             });
         } else {
@@ -313,10 +343,12 @@ export default {
       }
     },
     deletePlaylist() {
+      this.workingOnIt = true;
       playlistCollection
         .doc(this.existingObj.id)
         .delete()
         .then(() => {
+          this.workingOnIt = false;
           this.message.text =
             "Successfully deleted playlist " + this.existingObj.name;
           this.message.color = "green";
@@ -328,6 +360,7 @@ export default {
             "Error deleting playlist " + this.existingObj.name;
           this.message.color = "red";
           this.showMessage = true;
+          this.workingOnIt = false;
           this.existingObj = null;
           console.error(error);
         });
@@ -350,6 +383,7 @@ export default {
     },
     update() {
       if (this.existingObj) {
+        this.workingOnIt = true;
         playlistCollection
           .doc(this.existingObj.id)
           .update({
@@ -360,11 +394,19 @@ export default {
             modifiedOn: new Date().valueOf()
           })
           .then(() => {
+            this.workingOnIt = false;
             this.message.text =
               "Successfully updated Playlist " + this.existingObj.name;
             this.message.color = "green";
             this.showMessage = true;
             this.reset();
+          })
+          .catch((error) => {
+            this.workingOnIt = false;
+            this.message.text =
+              "Error updating Playlist " + this.existingObj.name;
+            this.message.color = "red";
+            this.showMessage = true;
           });
       }
     }
@@ -423,6 +465,11 @@ export default {
 
 .list-display {
   margin: 10px;
+  align-self: stretch;
+}
+
+.playlist-item {
+  height: 100%;
 }
 
 .image-upload {

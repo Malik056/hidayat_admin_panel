@@ -7,6 +7,7 @@
       <div class="form">
         <v-form ref="form" v-model="valid" lazy-validation>
           <v-text-field
+            :disabled="workingOnIt"
             v-model="name"
             :counter="50"
             :rules="nameRules"
@@ -15,6 +16,7 @@
           ></v-text-field>
 
           <v-select
+            :disabled="workingOnIt"
             item-text="name"
             item-value="id"
             return-object
@@ -27,6 +29,7 @@
           ></v-select>
 
           <v-textarea
+            :disabled="workingOnIt"
             name="Description"
             :rows="2"
             label="Description About Bayan"
@@ -35,7 +38,7 @@
 
           <div class="audio-upload">
             <v-file-input
-              :disabled="loading"
+              :disabled="loading || workingOnIt"
               :loading="loading"
               show-size
               chips
@@ -50,20 +53,29 @@
               :disabled="loading"
               dense
               class="ml-4"
-              @click="uploadAudio"
+              @click="uploadAudio()"
             >
               {{ loading ? "Uploading..." : audio ? "Change" : "Upload" }}
             </v-btn>
           </div>
 
-          <v-btn color="warning" @click="resetValidation">
+          <v-btn
+            :disabled="workingOnIt"
+            color="warning"
+            @click="resetValidation"
+          >
             Reset Validation
           </v-btn>
-          <v-btn color="error" class="ml-4" @click="reset">
+          <v-btn
+            :disabled="workingOnIt"
+            color="error"
+            class="ml-4"
+            @click="reset"
+          >
             Clear
           </v-btn>
           <v-btn
-            :disabled="!valid"
+            :disabled="workingOnIt || !valid"
             color="success"
             class="ml-4"
             @click="isUpdate ? update() : validateAndCreate()"
@@ -80,7 +92,11 @@
       </div>
       <div class="bayan-display" v-if="bayans && bayans.length > 0">
         <div v-for="(bayan, i) in bayans" :key="i" class="list-display">
-          <v-card :loading="false" class="mx-auto my-12" max-width="374">
+          <v-card
+            :loading="false"
+            class="mx-auto my-12 list-item"
+            max-width="374"
+          >
             <template slot="progress">
               <v-progress-linear
                 color="deep-purple"
@@ -202,11 +218,18 @@ export default {
       dialog: false,
       existingObj: null,
       loading: false,
+      workingOnIt: false,
       fileSelection: null,
       playlist: null,
       valid: true,
       name: "",
-      audioRules: [(v) => !!v || "Audio is required"],
+      audioRules: [
+        (v) => {
+          if (!!v) return true;
+          else if (this.audio) return true;
+          else return "Audio is required";
+        }
+      ],
       nameRules: [
         (v) => !!v || "Name is required",
         (v) => (v && v.length <= 50) || "Name must be less than 50 characters",
@@ -247,12 +270,15 @@ export default {
     validateAndCreate() {
       this.$refs.form.validate();
       if (this.valid) {
-        this.createBayan();
+        if (this.audio) this.createBayan();
+        else {
+          this.uploadAudio(true);
+        }
       }
     },
     reset() {
       this.$refs.form.reset();
-      this.audio = null;
+      this.audio = "";
       this.existingObj = null;
     },
     resetValidation() {
@@ -260,6 +286,7 @@ export default {
     },
 
     createBayan() {
+      this.workingOnIt = true;
       bayanCollection
         .add({
           createdOn: new Date().valueOf(),
@@ -269,16 +296,25 @@ export default {
           link: this.audio || null
         })
         .then(() => {
+          this.workingOnIt = false;
           this.message.text = "Successfully created Playlist " + this.name;
           this.message.color = "green";
           this.showMessage = true;
+          this.audio = "";
           this.reset();
+        })
+        .catch((error) => {
+          this.workingOnIt = false;
+          this.message.text = "Error Creating bayan " + this.name;
+          this.message.color = "red";
+          this.showMessage = true;
         });
     },
-    uploadAudio() {
+    uploadAudio(createBayanAfterUpload = false) {
       if (this.fileSelection && this.fileSelection.type) {
         if (this.fileSelection.type.includes("audio/")) {
           this.loading = true;
+          this.workingOnIt = true;
           let file = this.fileSelection;
           let name = new Date().valueOf() + "-" + file.name;
           let metadeta = {
@@ -290,16 +326,21 @@ export default {
             .then((url) => {
               this.fileSelection = null;
               this.loading = false;
-              this.audio = url;
+              this.workingOnIt = false;
+              this.audio = url || "";
               this.message.text = "Audio Uploaded Successfully";
               this.message.color = "green";
               this.showMessage = true;
+              if (createBayanAfterUpload) {
+                this.createBayan();
+              }
             })
             .catch((error) => {
               this.message.text = "Error Uploading Audio. Unable to Upload";
               this.message.color = "red";
               this.showMessage = true;
               this.loading = false;
+              this.workingOnIt = false;
               console.error(error);
             });
         } else {
@@ -334,10 +375,12 @@ export default {
     },
     delete() {
       if (this.existingObj) {
+        this.workingOnIt = true;
         bayanCollection
           .doc(this.existingObj.id)
           .delete()
           .then(() => {
+            this.workingOnIt = false;
             this.message.text =
               "Successfully deleted bayan" + this.existingObj.name;
             this.message.color = "green";
@@ -345,6 +388,7 @@ export default {
             this.existingObj = null;
           })
           .catch((error) => {
+            this.workingOnIt = false;
             this.message.text = "Error deleting bayan " + this.existingObj.name;
             this.message.color = "red";
             this.showMessage = true;
@@ -355,6 +399,7 @@ export default {
     },
     update() {
       if (this.existingObj) {
+        this.workingOnIt = true;
         bayanCollection
           .doc(this.existingObj.id)
           .update({
@@ -365,11 +410,18 @@ export default {
             modifiedOn: new Date().valueOf()
           })
           .then(() => {
+            this.workingOnIt = false;
             this.message.text =
               "Successfully updated Bayan " + this.existingObj.name;
             this.message.color = "green";
             this.showMessage = true;
             this.reset();
+          })
+          .catch((error) => {
+            this.workingOnIt = false;
+            this.message.text = "Error updating Bayan " + this.existingObj.name;
+            this.message.color = "red";
+            this.showMessage = true;
           });
       }
     }
@@ -428,6 +480,12 @@ export default {
 
 .list-display {
   margin: 10px;
+  align-self: stretch;
+}
+
+.display .bayan-display .list-item {
+  margin: 0px !important;
+  height: 100%;
 }
 
 .audio-upload {

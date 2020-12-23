@@ -7,6 +7,7 @@
       <div class="form">
         <v-form ref="form" v-model="valid" lazy-validation>
           <v-text-field
+            :disabled="workingOnIt"
             v-model="name"
             :counter="50"
             :rules="nameRules"
@@ -15,20 +16,30 @@
           ></v-text-field>
 
           <v-textarea
+            :disabled="workingOnIt"
             name="Description"
             :rows="2"
             label="Description About Category"
             v-model="description"
           ></v-textarea>
 
-          <v-btn color="warning" @click="resetValidation">
+          <v-btn
+            :disabled="workingOnIt"
+            color="warning"
+            @click="resetValidation"
+          >
             Reset Validation
           </v-btn>
-          <v-btn color="error" class="ml-4" @click="reset">
+          <v-btn
+            :disabled="workingOnIt"
+            color="error"
+            class="ml-4"
+            @click="reset"
+          >
             Clear
           </v-btn>
           <v-btn
-            :disabled="!valid"
+            :disabled="workingOnIt || !valid"
             color="success"
             class="ml-4"
             @click="isUpdate ? update() : validateAndCreate()"
@@ -130,7 +141,7 @@ export default {
       dialog: false,
       existingObj: null,
       self: null,
-
+      workingOnIt: false,
       valid: true,
       name: "",
       nameRules: [
@@ -187,6 +198,7 @@ export default {
     },
 
     createCategory() {
+      this.workingOnIt = true;
       categoryCollection
         .add({
           createdOn: new Date().valueOf(),
@@ -195,10 +207,17 @@ export default {
           modifiedOn: new Date().valueOf()
         })
         .then(() => {
+          this.workingOnIt = false;
           this.message.text = "Successfully created Category " + this.name;
           this.message.color = "green";
           this.showMessage = true;
           this.reset();
+        })
+        .catch((error) => {
+          this.workingOnIt = false;
+          this.message.text = "Error creating Category " + this.name;
+          this.message.color = "red";
+          this.showMessage = true;
         });
     },
     allowUpdate(obj) {
@@ -224,10 +243,12 @@ export default {
       }
     },
     deleteCategory() {
+      this.workingOnIt = true;
       categoryCollection
         .doc(this.existingObj.id)
         .delete()
         .then(() => {
+          this.workingOnIt = false;
           this.message.text =
             "Successfully deleted category " + this.existingObj.name;
           this.message.color = "green";
@@ -235,6 +256,7 @@ export default {
           this.existingObj = null;
         })
         .catch((error) => {
+          this.workingOnIt = false;
           this.message.text =
             "Error deleting category " + this.existingObj.name;
           this.message.color = "red";
@@ -280,6 +302,7 @@ export default {
 
     update() {
       if (this.existingObj) {
+        this.workingOnIt = true;
         categoryCollection
           .doc(this.existingObj.id)
           .update({
@@ -288,11 +311,19 @@ export default {
             modifiedOn: new Date().valueOf()
           })
           .then(() => {
+            this.workingOnIt = false;
             this.message.text =
               "Successfully updated Category " + this.existingObj.name;
             this.message.color = "green";
             this.showMessage = true;
             this.reset();
+          })
+          .catch((error) => {
+            this.workingOnIt = false;
+            this.message.text =
+              "Error updating Category " + this.existingObj.name;
+            this.message.color = "red";
+            this.showMessage = true;
           });
       }
     }
