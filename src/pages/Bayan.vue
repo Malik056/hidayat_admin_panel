@@ -316,7 +316,10 @@ export default {
           this.loading = true;
           this.workingOnIt = true;
           let file = this.fileSelection;
-          let name = new Date().valueOf() + "-" + file.name;
+          let name =
+            new Date().valueOf() +
+            "_audio_" +
+            Number.parseInt(Math.random(100) * 100);
           let metadeta = {
             contentType: file.type
           };
