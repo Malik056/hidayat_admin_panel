@@ -37,7 +37,16 @@
           ></v-textarea>
 
           <div class="audio-upload">
-            <v-file-input
+
+          <v-textarea
+            :disabled="workingOnIt"
+            name="Url"
+            :rows="2"
+            :rules="urlRules"
+            label="Your Bayan Url"
+            v-model="audio"
+          ></v-textarea>
+            <!-- <v-file-input
               :disabled="loading || workingOnIt"
               :loading="loading"
               show-size
@@ -47,16 +56,16 @@
               v-model="fileSelection"
               accept="audio/*"
               :rules="audioRules"
-            ></v-file-input>
-            <v-btn
+            ></v-file-input> -->
+            <!-- <v-btn
               color="primary"
               :disabled="loading"
               dense
               class="ml-4"
               @click="uploadAudio()"
             >
-              {{ loading ? "Uploading..." : audio ? "Change" : "Upload" }}
-            </v-btn>
+              {{ loading ? "Uploading..." : audio ? "Change" : "Upload" }} -->
+            <!-- </v-btn> -->
           </div>
 
           <v-btn
@@ -219,7 +228,7 @@ export default {
       existingObj: null,
       loading: false,
       workingOnIt: false,
-      fileSelection: null,
+      // fileSelection: null,
       playlist: null,
       valid: true,
       name: "",
@@ -230,9 +239,12 @@ export default {
           else return "Audio is required";
         }
       ],
+      urlRules:[
+        (v) => !!v || "Url is required",
+      ],
       nameRules: [
         (v) => !!v || "Name is required",
-        (v) => (v && v.length <= 50) || "Name must be less than 50 characters",
+        (v) => (v && v.length <= 80) || "Name must be less than 80 characters",
         (v) =>
           (v &&
             ((this.isUpdate &&
@@ -271,9 +283,9 @@ export default {
       this.$refs.form.validate();
       if (this.valid) {
         if (this.audio) this.createBayan();
-        else {
-          this.uploadAudio(true);
-        }
+        // else {
+        //   this.uploadAudio(true);
+        // }
       }
     },
     reset() {
@@ -310,53 +322,53 @@ export default {
           this.showMessage = true;
         });
     },
-    uploadAudio(createBayanAfterUpload = false) {
-      if (this.fileSelection && this.fileSelection.type) {
-        if (this.fileSelection.type.includes("audio/")) {
-          this.loading = true;
-          this.workingOnIt = true;
-          let file = this.fileSelection;
-          let name =
-            new Date().valueOf() +
-            "_audio_" +
-            Number.parseInt(Math.random(100) * 100);
-          let metadeta = {
-            contentType: file.type
-          };
-          let task = audioStorage.child(name).put(file, metadeta);
-          task
-            .then((snapshot) => snapshot.ref.getDownloadURL())
-            .then((url) => {
-              this.fileSelection = null;
-              this.loading = false;
-              this.workingOnIt = false;
-              this.audio = url || "";
-              this.message.text = "Audio Uploaded Successfully";
-              this.message.color = "green";
-              this.showMessage = true;
-              if (createBayanAfterUpload) {
-                this.createBayan();
-              }
-            })
-            .catch((error) => {
-              this.message.text = "Error Uploading Audio. Unable to Upload";
-              this.message.color = "red";
-              this.showMessage = true;
-              this.loading = false;
-              this.workingOnIt = false;
-              console.error(error);
-            });
-        } else {
-          this.message.text = "Invalid File type. Only Audio files are allowed";
-          this.message.color = "orange darken-4";
-          this.showMessage = true;
-        }
-      } else {
-        this.message.text = "No file is selected. Please select a file";
-        this.message.color = "orange darken-4";
-        this.showMessage = true;
-      }
-    },
+    // uploadAudio(createBayanAfterUpload = false) {
+    //   if (this.fileSelection && this.fileSelection.type) {
+    //     if (this.fileSelection.type.includes("audio/")) {
+    //       this.loading = true;
+    //       this.workingOnIt = true;
+    //       let file = this.fileSelection;
+    //       let name =
+    //         new Date().valueOf() +
+    //         "_audio_" +
+    //         Number.parseInt(Math.random(100) * 100);
+    //       let metadeta = {
+    //         contentType: file.type
+    //       };
+    //       let task = audioStorage.child(name).put(file, metadeta);
+    //       task
+    //         .then((snapshot) => snapshot.ref.getDownloadURL())
+    //         .then((url) => {
+    //           this.fileSelection = null;
+    //           this.loading = false;
+    //           this.workingOnIt = false;
+    //           this.audio = url || "";
+    //           this.message.text = "Audio Uploaded Successfully";
+    //           this.message.color = "green";
+    //           this.showMessage = true;
+    //           if (createBayanAfterUpload) {
+    //             this.createBayan();
+    //           }
+    //         })
+    //         .catch((error) => {
+    //           this.message.text = "Error Uploading Audio. Unable to Upload";
+    //           this.message.color = "red";
+    //           this.showMessage = true;
+    //           this.loading = false;
+    //           this.workingOnIt = false;
+    //           console.error(error);
+    //         });
+    //     } else {
+    //       this.message.text = "Invalid File type. Only Audio files are allowed";
+    //       this.message.color = "orange darken-4";
+    //       this.showMessage = true;
+    //     }
+    //   } else {
+    //     this.message.text = "No file is selected. Please select a file";
+    //     this.message.color = "orange darken-4";
+    //     this.showMessage = true;
+    //   }
+    // },
 
     allowUpdate(obj) {
       this.existingObj = JSON.parse(JSON.stringify(obj));
