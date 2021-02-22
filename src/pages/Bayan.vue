@@ -9,7 +9,7 @@
           <v-text-field
             :disabled="workingOnIt"
             v-model="name"
-            :counter="50"
+            :counter="100"
             :rules="nameRules"
             label="Bayan Name"
             required
@@ -244,7 +244,7 @@ export default {
       ],
       nameRules: [
         (v) => !!v || "Name is required",
-        (v) => (v && v.length <= 80) || "Name must be less than 80 characters",
+        (v) => (v && v.length <= 100) || "Name must be less than 100 characters",
         (v) =>
           (v &&
             ((this.isUpdate &&
