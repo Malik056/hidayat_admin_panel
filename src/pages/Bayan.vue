@@ -36,6 +36,14 @@
             v-model="description"
           ></v-textarea>
 
+          <v-textarea
+            :disabled="workingOnIt"
+            name="Fileid"
+            :rows="2"
+            label="File Id"
+            v-model="fileId"
+          ></v-textarea>
+
           <div class="audio-upload">
 
           <v-textarea
@@ -133,6 +141,9 @@
               </v-row>
               <div>
                 {{ bayan.description }}
+              </div>
+              <div>
+                {{ bayan.fileId }}
               </div>
             </v-card-text>
 
@@ -255,6 +266,7 @@ export default {
           "Name Already Exists. Try something else"
       ],
       description: "",
+      fileId: "",
       audio: "",
       message: {
         color: "red",
@@ -305,6 +317,7 @@ export default {
           name: this.name,
           playlistId: this.playlist.id,
           description: this.description || "",
+          fileId: this.fileId || "",
           link: this.audio || null
         })
         .then(() => {
@@ -374,6 +387,7 @@ export default {
       this.existingObj = JSON.parse(JSON.stringify(obj));
       this.name = this.existingObj.name;
       this.description = this.existingObj.description;
+      this.fileId = this.existingObj.fileId;
       this.playlist = this.existingObj.playlist;
       this.audio = this.existingObj.link || null;
     },
@@ -420,6 +434,7 @@ export default {
           .update({
             name: this.name,
             description: this.description || "",
+            fileId: this.fileId || "",
             link: this.audio || null,
             playlistId: this.playlist.id,
             modifiedOn: new Date().valueOf()
